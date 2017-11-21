@@ -34,14 +34,14 @@ resource "aws_lambda_permission" "main" {
   principal     = "apigateway.amazonaws.com"
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = "${aws_lambda_function.${key}.function_name}"
+  function_name = "${var.function_name}"
 }
 
 module "cors" {
   count         = "${var.cors_bool}"
   source        = "github.com/carrot/terraform-api-gateway-cors-module"
   resource_name = "cors"
-  rest_api_id   = "${aws_api_gateway_rest_api.${name}.id}"
+  rest_api_id   = "${var.rest_api_id}"
   resource_id   = "${aws_api_gateway_resource.main.id}"
 }
 
