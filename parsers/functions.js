@@ -82,10 +82,8 @@ module "${key}_${idx}" {
             });
 
             console.log(JSON.stringify(nestedRoutes, null, 2));
-            const api_data = apiGatewayRoutes(name, nestedRoutes);
-            if (api_data) {
-                console.log(api_data);
-            }
+
+            data += apiGatewayRoutes(name, nestedRoutes);
         }
 
         fs.writeFileSync(`${options.get('output')}/${key}.tf`, data);
@@ -129,7 +127,6 @@ const recursePaths = (pkey, tree, path, event) => {
     }
 
     if (!path.length) {
-        event.key = 'root-'+event.path.replace('/', '-').replace(/[\{\}]/g, '_');
         if (event.method) tree[current].methods[event.method.toUpperCase()] = event;
     }
 
@@ -140,8 +137,8 @@ const recursePaths = (pkey, tree, path, event) => {
 
 const apiGatewayRoutes = (name, nestedRoutes) => {
     const parent_id = nestedRoutes.key === 'root'
-        ? `"\${aws_api_gateway_rest_api.${name}.root_resource_id}"`
-        : `"\${aws_api_gateway_resource.${nestedRoutes.key}.id`;
+        ? `\${aws_api_gateway_rest_api.${name}.root_resource_id}`
+        : `\${aws_api_gateway_resource.${nestedRoutes.key}.id}`;
 
     let data = '';
 
@@ -161,12 +158,11 @@ const apiGatewayRoutes = (name, nestedRoutes) => {
         }
 
         data += `
-module "${event.key}-${event.method.toLowerCase()}" {
+module "${nestedRoutes.key}-${event.method.toLowerCase()}" {
   source          = "github.com/willfarrell/serverless-terraform//modules/function-http"
   aws_account_id  = "\${var.aws_account_id}"
   aws_region      = "\${var.aws_region}"
   rest_api_id     = "\${aws_api_gateway_rest_api.${name}.id}"
-  parent_id       = "${parent_id}"
   resource_id     = "${resource_id}"
   resource_path   = "${event.path}"
 
@@ -185,11 +181,11 @@ module "${event.key}-${event.method.toLowerCase()}" {
 
         if (event.cors) {
             data += `
-module "${event.key}-${event.method.toLowerCase()}-cors" {
+module "${nestedRoutes.key}-${event.method.toLowerCase()}-cors" {
   source        = "github.com/carrot/terraform-api-gateway-cors-module"
   resource_name = "cors"
   rest_api_id   = "\${aws_api_gateway_rest_api.${name}.id}"
-  resource_id   = "\${module.${event.key}-${event.method.toLowerCase()}.resource_id}"
+  resource_id   = "\${module.${nestedRoutes.key}-${event.method.toLowerCase()}.resource_id}"
 }
 `;
         }
