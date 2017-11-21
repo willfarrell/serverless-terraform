@@ -1,0 +1,28 @@
+{
+  "name": "serverless-terraform",
+  "version": "0.1.0",
+  "description": "Convert serverless config into a terraform module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://willfarrell@github.com/willfarrell/serverless-terraform.git"
+  },
+  "keywords": [
+    "serverless",
+    "terraform"
+  ],
+  "author": "willfarrell",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/willfarrell/serverless-terraform/issues"
+  },
+  "homepage": "https://github.com/willfarrell/serverless-terraform#readme",
+  "dependencies": {
+    "cli": "^1.0.1",
+    "js-yaml": "^3.10.0",
+    "webpack": "^3.8.1"
+  }
+}

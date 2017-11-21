@@ -1,0 +1,23 @@
+#!/usr/local/bin/node
+const path = require('path');
+const cli = require('cli');
+
+const opt = require('./options');
+const sls2tf = require('./index');
+
+cli.parse({
+    source: ['s', 'Source path to serverless.yml (Default ./serverless.yml)', 'string', opt.get('source')],
+    output: ['o', 'Output directory for terraform module, relative to source', 'string', opt.get('output')]
+});
+
+cli.main(function (args, options) {
+    const cwd = path.dirname(options.source);
+    opt.setPath('cwd', cwd);
+    opt.setPath('source', options.source);
+    opt.setPath('output', path.resolve(cwd, options.output));
+
+    sls2tf.init();
+    sls2tf.convert(options.source);
+});
+
+
