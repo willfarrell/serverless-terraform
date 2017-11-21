@@ -9,7 +9,7 @@ variable "rest_api_id" {
   description = "api_gateway_rest_api id"
 }
 
-variable "partent_id" {
+variable "parent_id" {
   type        = "string"
   description = "api_gateway_rest_api root_resource_id"
 }
@@ -42,9 +42,14 @@ variable "authorizer_bool" {
   description = "Include Event authorizer bool"
 }
 
-variable "authorizer_uri" {
+variable "authorizer_name" {
   type        = "string"
   description = "Event authorizer name (authorizer_uri)"
+}
+
+variable "authorizer_uri" {
+  type        = "string"
+  description = "Event authorizer arn (authorizer_uri)"
 }
 
 variable "authorizer_result_ttl_in_seconds" {

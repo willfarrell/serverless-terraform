@@ -67,7 +67,8 @@ module "${key}_${idx}" {
   
   cors_bool       = "${cors_bool}"
   authorizer_bool = "${authorizer_bool}"
-  authorizer_uri  = "${event.http.authorizer.name}"
+  authorizer_name = "${event.http.authorizer.name}"
+  authorizer_uri  = "\${aws_lambda_function.${event.http.authorizer.name}.arn}"
   authorizer_result_ttl_in_seconds = "${event.http.authorizer.resultTtlInSeconds}"
 }
 `;

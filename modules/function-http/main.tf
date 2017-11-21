@@ -47,7 +47,7 @@ module "cors" {
 
 resource "aws_api_gateway_authorizer" "main" {
   count                            = "${var.authorizer_bool}"
-  name                             = "${var.name}"
+  name                             = "${var.authorizer_name}"
   rest_api_id                      = "${var.rest_api_id}"
   authorizer_uri                   = "${var.authorizer_uri}"
   authorizer_result_ttl_in_seconds = "${var.authorizer_result_ttl_in_seconds}"
