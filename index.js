@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const yaml = require('js-yaml');
-const webpack = require("webpack");
+const webpack = require('webpack');
 
 const options = require('./options');
 
