@@ -13,10 +13,20 @@ variable "rest_api_id" {
   type        = "string"
   description = "api_gateway_rest_api id"
 }
+//
+//variable "parent_id" {
+//  type        = "string"
+//  description = "api_gateway_rest_api root_resource_id"
+//}
 
-variable "parent_id" {
+variable "resource_id" {
   type        = "string"
-  description = "api_gateway_rest_api root_resource_id"
+  description = "api_gateway_resource resource_id"
+}
+
+variable "resource_path" {
+  type        = "string"
+  description = "api_gateway_resource resource_path"
 }
 
 variable "path_part" {

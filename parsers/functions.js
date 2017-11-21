@@ -5,8 +5,12 @@ const options = require('../options');
 const http = require('./function.http');
 const schedule = require('./function.schedule');
 
+let data_api = '';
+
 module.exports = (serverless) => {
     if (!serverless.functions) return;
+
+    data_api = '';
 
     let hasApiGateway = false;
     const name = serverless.service;
@@ -42,56 +46,14 @@ resource "aws_lambda_function" "${key}" {
 `;
 
         if (fct.events) {
+            let nestedRoutes = {
+                key: 'root',
+                path_part: '',
+                methods:{},
+                children:{}
+            };
             fct.events.forEach((event, idx) => {
-                if (event.http) {
-                    if (!hasApiGateway) {
-                        fs.writeFileSync(`${options.get('output')}/api-gateway.tf`, apiGateway(name, event));
-                        hasApiGateway = true;
-                    }
-
-                    const authorizer_bool = !!event.http.authorizer ? 1 : 0;
-                    if (!authorizer_bool) {
-                        event.http.authorizer = {
-                            name: '',
-                            uri: '',
-                            resultTtlInSeconds: 0
-                        };
-                    } else {
-                        event.http.authorizer.uri = `\${aws_lambda_function.${event.http.authorizer.name}.arn}`;
-                    }
-
-                    data += `
-module "${key}_${idx}" {
-  source = "github.com/willfarrell/serverless-terraform//modules/function-http"
-  aws_account_id = "\${var.aws_account_id}"
-  aws_region = "\${var.aws_region}"
-  rest_api_id = "\${aws_api_gateway_rest_api.${name}.id}"
-  parent_id = "\${aws_api_gateway_rest_api.${name}.root_resource_id}"
-  
-  http_method     = "${event.http.method.toUpperCase()}"
-  path_part       = "${event.http.path}"
-  
-  function_name       = "\${aws_lambda_function.${key}.function_name}"
-  function_arn        = "\${aws_lambda_function.${key}.arn}"
-  
-  authorizer_bool = "${authorizer_bool}"
-  authorizer_name = "${event.http.authorizer.name}"
-  authorizer_uri  = "${event.http.authorizer.uri}"
-  authorizer_result_ttl_in_seconds = "${event.http.authorizer.resultTtlInSeconds}"
-}
-`;
-
-                    if (event.http.cors) {
-                        data += `
-module "${key}_${idx}_cors" {
-  source        = "github.com/carrot/terraform-api-gateway-cors-module"
-  resource_name = "cors"
-  rest_api_id   = "\${aws_api_gateway_rest_api.${name}.id}"
-  resource_id   = "\${module.${key}_${idx}.resource_id}"
-}
-`;
-                    }
-                } else if (event.schedule) {
+                if (event.schedule) {
                     data += `
 module "${key}_${idx}" {
   source              = "github.com/willfarrell/serverless-terraform//modules/function-schedule"
@@ -102,8 +64,28 @@ module "${key}_${idx}" {
   function_arn        = "\${aws_lambda_function.${key}.arn}"
 }
 `;
+                } else if (event.http) {
+                    if (!hasApiGateway) {
+                        fs.writeFileSync(`${options.get('output')}/api-gateway.tf`, apiGateway(name, event));
+                        hasApiGateway = true;
+                    }
+
+
+                    if (event.http.path === '/') {
+                        // API root
+                        nestedRoutes.methods[event.http.method] = event.http;
+                    } else {
+                        event.http.lambda_function = key;
+                        nestedRoutes.children = recursePaths(nestedRoutes.key, nestedRoutes.children, event.http.path.split('/'), event.http);
+                    }
                 }
             });
+
+            console.log(JSON.stringify(nestedRoutes, null, 2));
+            const api_data = apiGatewayRoutes(name, nestedRoutes);
+            if (api_data) {
+                console.log(api_data);
+            }
         }
 
         fs.writeFileSync(`${options.get('output')}/${key}.tf`, data);
@@ -126,4 +108,104 @@ output "api_gateway_arn" {
   value = "\${aws_api_gateway_rest_api.${name}.arn}"
 }
 `;
+};
+
+const recursePaths = (pkey, tree, path, event) => {
+    let current = '';
+    while(current === '') {
+        if (!path.length) {
+            return tree;
+        }
+        current = path.shift();
+    }
+
+    if (!tree[current]) {
+        tree[current] = {
+            key: pkey+'-'+current.replace(/[\{\}]/g, '_'),
+            path_part: current,
+            methods:{},
+            children:{}
+        };
+    }
+
+    if (!path.length) {
+        event.key = 'root-'+event.path.replace('/', '-').replace(/[\{\}]/g, '_');
+        if (event.method) tree[current].methods[event.method.toUpperCase()] = event;
+    }
+
+    tree[current].children = recursePaths(tree[current].key, tree[current].children, path, event);
+
+    return tree;
+};
+
+const apiGatewayRoutes = (name, nestedRoutes) => {
+    const parent_id = nestedRoutes.key === 'root'
+        ? `"\${aws_api_gateway_rest_api.${name}.root_resource_id}"`
+        : `"\${aws_api_gateway_resource.${nestedRoutes.key}.id`;
+
+    let data = '';
+
+    Object.keys(nestedRoutes.methods).forEach((method) => {
+        const resource_id = parent_id;
+        const event = nestedRoutes.methods[method];
+
+        const authorizer_bool = !!event.authorizer ? 1 : 0;
+        if (!authorizer_bool) {
+            event.authorizer = {
+                name: '',
+                uri: '',
+                resultTtlInSeconds: 0
+            };
+        } else {
+            event.authorizer.uri = `\${aws_lambda_function.${event.authorizer.name}.arn}`;
+        }
+
+        data += `
+module "${event.key}-${event.method.toLowerCase()}" {
+  source          = "github.com/willfarrell/serverless-terraform//modules/function-http"
+  aws_account_id  = "\${var.aws_account_id}"
+  aws_region      = "\${var.aws_region}"
+  rest_api_id     = "\${aws_api_gateway_rest_api.${name}.id}"
+  parent_id       = "${parent_id}"
+  resource_id     = "${resource_id}"
+  resource_path   = "${event.path}"
+
+  http_method     = "${event.method.toUpperCase()}"
+  path_part       = "${nestedRoutes.path_part}"
+
+  function_name   = "\${aws_lambda_function.${event.lambda_function}.function_name}"
+  function_arn    = "\${aws_lambda_function.${event.lambda_function}.arn}"
+
+  authorizer_bool = "${authorizer_bool}"
+  authorizer_name = "${event.authorizer.name}"
+  authorizer_uri  = "${event.authorizer.uri}"
+  authorizer_result_ttl_in_seconds = "${event.authorizer.resultTtlInSeconds}"
+}
+`;
+
+        if (event.cors) {
+            data += `
+module "${event.key}-${event.method.toLowerCase()}-cors" {
+  source        = "github.com/carrot/terraform-api-gateway-cors-module"
+  resource_name = "cors"
+  rest_api_id   = "\${aws_api_gateway_rest_api.${name}.id}"
+  resource_id   = "\${module.${event.key}-${event.method.toLowerCase()}.resource_id}"
+}
+`;
+        }
+    });
+
+    Object.keys(nestedRoutes.children).forEach((key) => {
+        data += `
+resource "aws_api_gateway_resource" "${nestedRoutes.children[key].key}" {
+  rest_api_id = "\${aws_api_gateway_rest_api.${name}.id}"
+  parent_id   = "${parent_id}"
+  path_part   = "${key}"
+}
+`;
+
+        data += apiGatewayRoutes(name, nestedRoutes.children[key]);
+    });
+
+    return data;
 };

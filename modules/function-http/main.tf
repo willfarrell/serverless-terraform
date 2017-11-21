@@ -1,15 +1,16 @@
 
-resource "aws_api_gateway_resource" "main" {
-  rest_api_id = "${var.rest_api_id}"
-  parent_id   = "${var.parent_id}"
-  path_part   = "${var.path_part}"
-}
+// handled by parent - due to nesting
+//resource "aws_api_gateway_resource" "main" {
+//  rest_api_id = "${var.rest_api_id}"
+//  parent_id   = "${var.parent_id}"
+//  path_part   = "${var.path_part}"
+//}
 
 // No Auth
 resource "aws_api_gateway_method" "main" {
   count         = "${1-var.authorizer_bool}"
   rest_api_id   = "${var.rest_api_id}"
-  resource_id   = "${aws_api_gateway_resource.main.id}"
+  resource_id   = "${var.resource_id}"
   http_method   = "${var.http_method}"
   authorization = "NONE"
 }
@@ -18,7 +19,7 @@ resource "aws_api_gateway_method" "main" {
 resource "aws_api_gateway_method" "main_auth" {
   count         = "${var.authorizer_bool}"
   rest_api_id   = "${var.rest_api_id}"
-  resource_id   = "${aws_api_gateway_resource.main.id}"
+  resource_id   = "${var.resource_id}"
   http_method   = "${var.http_method}"
   authorization = "CUSTOM"
   authorizer_id = "${aws_api_gateway_authorizer.main.id}"
@@ -26,7 +27,7 @@ resource "aws_api_gateway_method" "main_auth" {
 
 resource "aws_api_gateway_integration" "main" {
   rest_api_id   = "${var.rest_api_id}"
-  resource_id   = "${aws_api_gateway_resource.main.id}"
+  resource_id   = "${var.resource_id}"
   http_method   = "${var.http_method}"
   integration_http_method = "POST"
   type          = "AWS_PROXY"
@@ -39,7 +40,7 @@ resource "aws_lambda_permission" "main" {
   action        = "lambda:InvokeFunction"
   function_name = "${var.function_name}"
   # More: http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html
-  source_arn = "arn:aws:execute-api:${var.aws_region}:${var.aws_account_id}:${var.rest_api_id}/*/${var.http_method}${aws_api_gateway_resource.main.path}"
+  source_arn = "arn:aws:execute-api:${var.aws_region}:${var.aws_account_id}:${var.rest_api_id}/*/${var.http_method}/${var.resource_path}"
 
 }
 
