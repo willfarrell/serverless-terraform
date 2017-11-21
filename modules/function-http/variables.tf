@@ -1,3 +1,8 @@
+variable "aws_account_id" {
+  type        = "string"
+  description = "Serverless AWS Account Id"
+}
+
 variable "aws_region" {
   type        = "string"
   default     = "us-east-1"

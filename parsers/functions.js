@@ -63,6 +63,7 @@ resource "aws_lambda_function" "${key}" {
                     data += `
 module "${key}_${idx}" {
   source = "github.com/willfarrell/serverless-terraform//modules/function-http"
+  aws_account_id = "\${var.aws_account_id}"
   aws_region = "\${var.aws_region}"
   rest_api_id = "\${aws_api_gateway_rest_api.${name}.id}"
   parent_id = "\${aws_api_gateway_rest_api.${name}.root_resource_id}"
