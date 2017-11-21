@@ -30,6 +30,12 @@ variable "function_name" {
   description = "Lambda function name"
 }
 
+variable "cors_bool" {
+  type        = "string"
+  default     = "0"
+  description = "Include Event cors bool"
+}
+
 variable "authorizer_bool" {
   type        = "string"
   default     = "0"

@@ -38,10 +38,11 @@ resource "aws_lambda_permission" "main" {
 }
 
 module "cors" {
-  source = "github.com/carrot/terraform-api-gateway-cors-module"
+  count         = "${var.cors_bool}"
+  source        = "github.com/carrot/terraform-api-gateway-cors-module"
   resource_name = "cors"
-  rest_api_id = "${aws_api_gateway_rest_api.${name}.id}"
-  resource_id = "${aws_api_gateway_resource.main.id}"
+  rest_api_id   = "${aws_api_gateway_rest_api.${name}.id}"
+  resource_id   = "${aws_api_gateway_resource.main.id}"
 }
 
 resource "aws_api_gateway_authorizer" "main" {

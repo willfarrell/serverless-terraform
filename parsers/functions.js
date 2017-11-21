@@ -49,30 +49,32 @@ resource "aws_lambda_function" "${key}" {
                         hasApiGateway = true;
                     }
 
+                    const cors_bool = !!event.http.cors ? 1 : 0;
                     const authorizer_bool = !!event.http.authorizer ? 1 : 0;
                     if (!authorizer_bool) {
                         event.http.authorizer = {};
                     }
 
                     data += `
-module "${key}_http_${idx}" {
+module "${key}_${idx}" {
   source = "github.com/willfarrell/serverless-terraform//modules/function-http"
   aws_region = "\${var.aws_region}"
   rest_api_id = "\${aws_api_gateway_rest_api.${name}.id}"
   parent_id = "\${aws_api_gateway_rest_api.${name}.root_resource_id}"
   
-  http_method   = "${event.http.method.toUpperCase()}"
-  path_part     = "${event.http.path}"
+  http_method     = "${event.http.method.toUpperCase()}"
+  path_part       = "${event.http.path}"
   
+  cors_bool       = "${cors_bool}"
   authorizer_bool = "${authorizer_bool}"
-  authorizer_uri = "${event.http.authorizer.name}"
+  authorizer_uri  = "${event.http.authorizer.name}"
   authorizer_result_ttl_in_seconds = "${event.http.authorizer.resultTtlInSeconds}"
 }
 `;
 
                 } else if (event.schedule) {
                     data += `
-module "${key}_http_${idx}" {
+module "${key}_${idx}" {
   source              = "github.com/willfarrell/serverless-terraform//modules/function-schedule"
   name                = "\${var.service}-${key}-${idx}"
   description         = "${event.schedule.description || ''}"
