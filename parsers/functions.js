@@ -49,10 +49,15 @@ resource "aws_lambda_function" "${key}" {
                         hasApiGateway = true;
                     }
 
-                    const cors_bool = !!event.http.cors ? 1 : 0;
                     const authorizer_bool = !!event.http.authorizer ? 1 : 0;
                     if (!authorizer_bool) {
-                        event.http.authorizer = {};
+                        event.http.authorizer = {
+                            name: '',
+                            uri: '',
+                            resultTtlInSeconds: 0
+                        };
+                    } else {
+                        event.http.authorizer.uri = `\${aws_lambda_function.${event.http.authorizer.name}.arn}`;
                     }
 
                     data += `
@@ -65,14 +70,26 @@ module "${key}_${idx}" {
   http_method     = "${event.http.method.toUpperCase()}"
   path_part       = "${event.http.path}"
   
-  cors_bool       = "${cors_bool}"
+  function_name       = "\${aws_lambda_function.${key}.function_name}"
+  function_arn        = "\${aws_lambda_function.${key}.arn}"
+  
   authorizer_bool = "${authorizer_bool}"
   authorizer_name = "${event.http.authorizer.name}"
-  authorizer_uri  = "\${aws_lambda_function.${event.http.authorizer.name}.arn}"
+  authorizer_uri  = "${event.http.authorizer.uri}"
   authorizer_result_ttl_in_seconds = "${event.http.authorizer.resultTtlInSeconds}"
 }
 `;
 
+                    if (event.http.cors) {
+                        data += `
+module "cors" {
+    source        = "github.com/carrot/terraform-api-gateway-cors-module"
+    resource_name = "cors"
+    rest_api_id   = "\${aws_api_gateway_rest_api.${name}.id}"
+    resource_id   = "\${module.${key}_${idx}.resource_id}"
+}
+`;
+                    }
                 } else if (event.schedule) {
                     data += `
 module "${key}_${idx}" {
