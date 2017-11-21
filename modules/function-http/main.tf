@@ -5,6 +5,7 @@ resource "aws_api_gateway_resource" "main" {
   path_part   = "${var.path_part}"
 }
 
+// No Auth
 resource "aws_api_gateway_method" "main" {
   count         = "${1-var.authorizer_bool}"
   rest_api_id   = "${var.rest_api_id}"
@@ -13,6 +14,17 @@ resource "aws_api_gateway_method" "main" {
   authorization = "NONE"
 }
 
+resource "aws_api_gateway_integration" "main" {
+  count         = "${1-var.authorizer_bool}"
+  rest_api_id   = "${var.rest_api_id}"
+  resource_id   = "${aws_api_gateway_method.main.id}"
+  http_method   = "${var.http_method}"
+  integration_http_method = "POST"
+  type          = "AWS_PROXY"
+  uri           = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${var.function_arn}/invocations"
+}
+
+// With Auth
 resource "aws_api_gateway_method" "main_auth" {
   count         = "${var.authorizer_bool}"
   rest_api_id   = "${var.rest_api_id}"
@@ -22,9 +34,10 @@ resource "aws_api_gateway_method" "main_auth" {
   authorizer_id = "${aws_api_gateway_authorizer.main.id}"
 }
 
-resource "aws_api_gateway_integration" "main" {
+resource "aws_api_gateway_integration" "main_auth" {
+  count         = "${var.authorizer_bool}"
   rest_api_id   = "${var.rest_api_id}"
-  resource_id   = "${aws_api_gateway_resource.main.id}"
+  resource_id   = "${aws_api_gateway_method.main.id}"
   http_method   = "${var.http_method}"
   integration_http_method = "POST"
   type          = "AWS_PROXY"

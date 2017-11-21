@@ -82,11 +82,11 @@ module "${key}_${idx}" {
 
                     if (event.http.cors) {
                         data += `
-module "cors" {
-    source        = "github.com/carrot/terraform-api-gateway-cors-module"
-    resource_name = "cors"
-    rest_api_id   = "\${aws_api_gateway_rest_api.${name}.id}"
-    resource_id   = "\${module.${key}_${idx}.resource_id}"
+module "${key}_${idx}_cors" {
+  source        = "github.com/carrot/terraform-api-gateway-cors-module"
+  resource_name = "cors"
+  rest_api_id   = "\${aws_api_gateway_rest_api.${name}.id}"
+  resource_id   = "\${module.${key}_${idx}.resource_id}"
 }
 `;
                     }
