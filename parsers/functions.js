@@ -182,8 +182,7 @@ module "${nestedRoutes.key}-${event.method.toLowerCase()}" {
         if (event.cors) {
             data += `
 module "${nestedRoutes.key}-${event.method.toLowerCase()}-cors" {
-  source        = "github.com/carrot/terraform-api-gateway-cors-module"
-  resource_name = "cors"
+  source        = "github.com/willfarrell/serverless-terraform//modules/function-http-cors"
   rest_api_id   = "\${aws_api_gateway_rest_api.${name}.id}"
   resource_id   = "${resource_id}"
 }
