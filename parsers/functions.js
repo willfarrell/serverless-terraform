@@ -43,6 +43,13 @@ resource "aws_lambda_function" "${key}" {
   publish = true
   tags = ${JSON.stringify(fct.tags || {}, null, 2).replace(/"(.*?)":/g, '$1 = ')}
 }
+
+resource "aws_lambda_permission" "main" {
+  principal     = "apigateway.amazonaws.com"
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = "\${aws_lambda_function.${key}.function_name}"
+}
 `;
 
         if (fct.events) {
