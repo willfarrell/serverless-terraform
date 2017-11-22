@@ -9,6 +9,7 @@ resource "aws_api_gateway_method" "ResourceOptions" {
 }
 
 resource "aws_api_gateway_integration" "ResourceOptionsIntegration" {
+  depends_on = ["aws_api_gateway_method.ResourceOptions"]
   rest_api_id = "${var.rest_api_id}"
   resource_id = "${var.resource_id}"
   http_method = "${aws_api_gateway_method.ResourceOptions.http_method}"

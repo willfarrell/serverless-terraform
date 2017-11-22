@@ -83,6 +83,16 @@ module "${key}_${idx}" {
             //console.log(JSON.stringify(nestedRoutes, null, 2));
 
             data += apiGatewayRoutes(name, nestedRoutes);
+        } else {
+            // no events
+            data += `
+resource "aws_lambda_permission" "${key}" {
+  principal     = "apigateway.amazonaws.com"
+  statement_id  = "\${var.service}-${key}"
+  action        = "lambda:InvokeFunction"
+  function_name = "\${aws_lambda_function.${key}.function_name}"
+}
+`;
         }
 
         fs.writeFileSync(`${options.get('output')}/${key}.tf`, data);
@@ -145,6 +155,8 @@ const apiGatewayRoutes = (name, nestedRoutes) => {
         const resource_id = parent_id;
         const event = nestedRoutes.methods[method];
 
+        console.log('endpoint', method, nestedRoutes.key, resource_id);
+
         const authorizer_bool = !!event.authorizer ? 1 : 0;
         if (!authorizer_bool) {
             event.authorizer = {
@@ -153,7 +165,7 @@ const apiGatewayRoutes = (name, nestedRoutes) => {
                 resultTtlInSeconds: 0
             };
         } else {
-            event.authorizer.uri = `\${aws_lambda_function.${event.authorizer.name}.arn}`;
+            event.authorizer.uri = `\${aws_lambda_function.${event.authorizer.name}.invoke_arn}`;
         }
 
         data += `
@@ -161,7 +173,7 @@ module "${nestedRoutes.key}-${event.method.toLowerCase()}" {
   source          = "github.com/willfarrell/serverless-terraform//modules/function-http"
   aws_account_id  = "\${var.aws_account_id}"
   aws_region      = "\${var.aws_region}"
-  name            = "${nestedRoutes.key}-${event.method.toLowerCase()}"
+  name            = "\${var.service}-${nestedRoutes.key}-${event.method.toLowerCase()}"
   rest_api_id     = "\${aws_api_gateway_rest_api.${name}.id}"
   resource_id     = "${resource_id}"
   resource_path   = "${event.path}"

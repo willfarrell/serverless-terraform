@@ -26,6 +26,14 @@ resource "aws_api_gateway_integration" "main" {
 }
 
 // With Auth
+resource "aws_api_gateway_authorizer" "main" {
+  count                            = "${var.authorizer_bool}"
+  name                             = "${var.authorizer_name}"
+  rest_api_id                      = "${var.rest_api_id}"
+  authorizer_uri                   = "${var.authorizer_uri}"
+  authorizer_result_ttl_in_seconds = "${var.authorizer_result_ttl_in_seconds}"
+}
+
 resource "aws_api_gateway_method" "main_auth" {
   count         = "${var.authorizer_bool}"
   rest_api_id   = "${var.rest_api_id}"
@@ -52,13 +60,5 @@ resource "aws_lambda_permission" "main" {
   function_name = "${var.function_name}"
   # More: http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html
   source_arn = "arn:aws:execute-api:${var.aws_region}:${var.aws_account_id}:${var.rest_api_id}/*/${var.http_method}/${var.resource_path}"
-}
-
-resource "aws_api_gateway_authorizer" "main" {
-  count                            = "${var.authorizer_bool}"
-  name                             = "${var.authorizer_name}"
-  rest_api_id                      = "${var.rest_api_id}"
-  authorizer_uri                   = "${var.authorizer_uri}"
-  authorizer_result_ttl_in_seconds = "${var.authorizer_result_ttl_in_seconds}"
 }
 
