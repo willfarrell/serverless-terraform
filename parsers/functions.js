@@ -70,18 +70,17 @@ module "${key}_${idx}" {
                         hasApiGateway = true;
                     }
 
-
+                    event.http.lambda_function = key;
                     if (event.http.path === '/') {
                         // API root
                         nestedRoutes.methods[event.http.method] = event.http;
                     } else {
-                        event.http.lambda_function = key;
                         nestedRoutes.children = recursePaths(nestedRoutes.key, nestedRoutes.children, event.http.path.split('/'), event.http);
                     }
                 }
             });
 
-            console.log(JSON.stringify(nestedRoutes, null, 2));
+            //console.log(JSON.stringify(nestedRoutes, null, 2));
 
             data += apiGatewayRoutes(name, nestedRoutes);
         }
@@ -185,13 +184,14 @@ module "${nestedRoutes.key}-${event.method.toLowerCase()}-cors" {
   source        = "github.com/carrot/terraform-api-gateway-cors-module"
   resource_name = "cors"
   rest_api_id   = "\${aws_api_gateway_rest_api.${name}.id}"
-  resource_id   = "\${module.${nestedRoutes.key}-${event.method.toLowerCase()}.resource_id}"
+  resource_id   = "${resource_id}"
 }
 `;
         }
     });
 
     Object.keys(nestedRoutes.children).forEach((key) => {
+        console.log('resource', nestedRoutes.children[key].key, parent_id);
         data += `
 resource "aws_api_gateway_resource" "${nestedRoutes.children[key].key}" {
   rest_api_id = "\${aws_api_gateway_rest_api.${name}.id}"
