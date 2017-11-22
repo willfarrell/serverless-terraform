@@ -2,9 +2,6 @@ const path = require('path');
 const fs = require('fs');
 const options = require('../options');
 
-const http = require('./function.http');
-const schedule = require('./function.schedule');
-
 let data_api = '';
 
 module.exports = (serverless) => {
