@@ -6,7 +6,7 @@ resource "aws_cloudwatch_event_rule" "main" {
 
 resource "aws_lambda_permission" "main" {
   principal     = "events.amazonaws.com"
-  statement_id  = "AllowExecutionFromCloudWatch"
+  statement_id  = "${var.name}"
   action        = "lambda:InvokeFunction"
   function_name = "${var.function_name}"
   source_arn    = "${aws_cloudwatch_event_rule.main.arn}"

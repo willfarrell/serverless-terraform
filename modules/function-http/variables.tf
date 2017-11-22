@@ -19,6 +19,11 @@ variable "rest_api_id" {
 //  description = "api_gateway_rest_api root_resource_id"
 //}
 
+variable "name" {
+  type        = "string"
+  description = "unique name"
+}
+
 variable "resource_id" {
   type        = "string"
   description = "api_gateway_resource resource_id"

@@ -43,13 +43,6 @@ resource "aws_lambda_function" "${key}" {
   publish = true
   tags = ${JSON.stringify(fct.tags || {}, null, 2).replace(/"(.*?)":/g, '$1 = ')}
 }
-
-resource "aws_lambda_permission" "main" {
-  principal     = "apigateway.amazonaws.com"
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = "\${aws_lambda_function.${key}.function_name}"
-}
 `;
 
         if (fct.events) {
@@ -168,6 +161,7 @@ module "${nestedRoutes.key}-${event.method.toLowerCase()}" {
   source          = "github.com/willfarrell/serverless-terraform//modules/function-http"
   aws_account_id  = "\${var.aws_account_id}"
   aws_region      = "\${var.aws_region}"
+  name            = "${nestedRoutes.key}-${event.method.toLowerCase()}"
   rest_api_id     = "\${aws_api_gateway_rest_api.${name}.id}"
   resource_id     = "${resource_id}"
   resource_path   = "${event.path}"
